@@ -7,14 +7,14 @@
         "ext-iconv": "*",
         "doctrine/doctrine-bundle": "^1.10",
         "doctrine/orm": "^2.6",
-        "friendsofsymfony/rest-bundle": "^2.5",
-        "jms/serializer-bundle": "^2.4",
         "sensio/framework-extra-bundle": "^5.2",
         "symfony/console": "4.2.*",
         "symfony/dotenv": "4.2.*",
         "symfony/flex": "^1.1",
         "symfony/framework-bundle": "4.2.*",
         "symfony/orm-pack": "^1.0",
+        "symfony/property-access": "4.2.*",
+        "symfony/serializer": "4.2.*",
         "symfony/yaml": "4.2.*"
     },
     "config": {
@@ -64,6 +64,7 @@
     },
     "require-dev": {
         "symfony/maker-bundle": "^1.11",
+        "symfony/var-dumper": "4.2.*",
         "symfony/web-server-bundle": "4.2.*"
     }
 }
