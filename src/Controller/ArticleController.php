@@ -14,6 +14,7 @@ use Symfony\Component\Serializer\Serializer;
 use App\Repository\ArticleRepository;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Article;
+use App\Service\ArticleService;
 
 /**
  * @Route("/api")
@@ -41,8 +42,15 @@ class ArticleController extends Controller
      */
     private $em;
 
+    /**
+     * @var ArticleService
+     */
+    private $service;
 
-    public function __construct(ArticleRepository $repo, ObjectManager $em, JsonResponse $response)
+    public function __construct(ArticleRepository $repo, 
+                                ObjectManager $em, 
+                                JsonResponse $response, 
+                                ArticleService $service)
     {
         $encoders           = [new XmlEncoder(), new JsonEncoder()];
         $normalizers        = [new ObjectNormalizer()];
@@ -50,6 +58,7 @@ class ArticleController extends Controller
         $this->response     = $response;
         $this->repo         = $repo;
         $this->em           = $em;
+        $this->service      = $service;
 
     }
 
@@ -94,6 +103,7 @@ class ArticleController extends Controller
     public function getArticleByIdAction(Article $article)
     {
         $json = $this->serializer->serialize($article, 'json');
+
         return $this->response->fromJsonString($json);
 
     }
@@ -108,6 +118,7 @@ class ArticleController extends Controller
     {
         $this->em->remove($article);
         $this->em->flush();
+
         return $this->response->setData('Object Delete');
 
     }
@@ -118,10 +129,12 @@ class ArticleController extends Controller
      * @param Article
      * @return JsonResponse
      */
-    public function updateArticleByIdAction(Article $article) 
+    public function editArticleByIdAction(Article $article, Request $request) 
     {
-        $this->em->persist($article);
-        $this->em->flush();
+        $data = $request->getContent();
+        $editArticle  = $this->serializer->deserialize($data, User::class, 'json');
+        $this->service->update($article, $editArticle);
+        
         return $this->response->setData('Object Update');
     }
 

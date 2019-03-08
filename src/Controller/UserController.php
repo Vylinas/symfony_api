@@ -15,6 +15,7 @@ use Symfony\Component\Serializer\Serializer;
 use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\User;
+use App\Service\UserService;
 
 /**
  * @Route("/api")
@@ -46,10 +47,17 @@ class UserController extends Controller
      */
     private $encoder;
 
+    /**
+     * @var UserService
+     */
+    private $service;
+
+    
     public function __construct(UserRepository $repo, 
                                 ObjectManager $em, 
                                 JsonResponse $response,
-                                UserPasswordEncoderInterface $encoder)
+                                UserPasswordEncoderInterface $encoder,
+                                UserService $service)
     {
         $encoders           = [new XmlEncoder(), new JsonEncoder()];
         $normalizers        = [new ObjectNormalizer()];
@@ -58,6 +66,7 @@ class UserController extends Controller
         $this->repo         = $repo;
         $this->em           = $em;
         $this->encoder      = $encoder;
+        $this->service      = $service;
 
     }
 
@@ -85,10 +94,42 @@ class UserController extends Controller
      * @param User
      * @return JsonResponse
      */
-    public function getArticleByIdAction(User $user)
+    public function getUserByIdAction(User $user)
     {
         $json = $this->serializer->serialize($user, 'json');
         return $this->response->fromJsonString($json);
 
     }
+
+    /**
+     * @Route("/articles/{id}", methods={"DELETE"} ) 
+     * 
+     * @param User
+     * @return JsonResponse
+     */
+    public function deleteArticleByIdAction(User $user)
+    {
+        $this->em->remove($user);
+        $this->em->flush();
+
+        return $this->response->setData('Object Delete');
+
+    }
+
+    /**
+     * @Route("/users/{id}", methods={"PUT"} )
+     * 
+     * @param User
+     * @return JsonResponse
+     */
+    public function editUserByIdAction(User $user, Request $request)
+    {
+        $data       = $request->getContent();
+        $editUser   = $this->serializer->deserialize($data, User::class, 'json');
+        $this->service->update($user, $editUser);
+
+        return $this->response->setData('Object Update');
+
+    }
+
 }
