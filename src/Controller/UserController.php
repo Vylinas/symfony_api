@@ -6,7 +6,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Doctrine\Common\Persistence\ObjectManager;
-use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
@@ -16,6 +15,7 @@ use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\User;
 use App\Service\UserService;
+use App\Service\OperateSerializer;
 
 /**
  * @Route("/api")
@@ -28,7 +28,7 @@ class UserController extends Controller
     private $repo;
 
     /**
-     * @var Serializer
+     * @var OperateSerializer
      */
     private $serializer;
 
@@ -43,30 +43,26 @@ class UserController extends Controller
     private $em;
 
     /**
-     * @var UserPasswordEncoderInterface
-     */
-    private $encoder;
-
-    /**
      * @var UserService
      */
     private $service;
 
     
-    public function __construct(UserRepository $repo, 
-                                ObjectManager $em, 
-                                JsonResponse $response,
-                                UserPasswordEncoderInterface $encoder,
-                                UserService $service)
-    {
+    public function __construct(
+        UserRepository $repo, 
+        ObjectManager $em, 
+        JsonResponse $response,
+        UserService $service,
+        OperateSerializer $serializer
+    ){
         $encoders           = [new XmlEncoder(), new JsonEncoder()];
         $normalizers        = [new ObjectNormalizer()];
         $this->serializer   = new Serializer($normalizers, $encoders);
         $this->response     = $response;
         $this->repo         = $repo;
         $this->em           = $em;
-        $this->encoder      = $encoder;
         $this->service      = $service;
+        $this->serializer   = $serializer;
 
     }
 
@@ -79,10 +75,12 @@ class UserController extends Controller
     public function postArticleAction(Request $request)
     {
         $data  = $request->getContent();
-        $user  = $this->serializer->deserialize($data, User::class, 'json');
-        $user->setPassword($this->encoder->encodePassword($user, $user->getPassword()));
-        $this->em->persist($user);
-        $this->em->flush();
+        $user  = $this->serializer->decode($data, User::class);
+        try{
+            $this->service->create($user);
+        }catch(\Exeption $e){
+            error_log($e->getMessage());
+        }
 
         return $this->response->setData('Object Create');
 
@@ -96,7 +94,8 @@ class UserController extends Controller
      */
     public function getUserByIdAction(User $user)
     {
-        $json = $this->serializer->serialize($user, 'json');
+        $json = $this->serializer->encode($user, 'json');
+
         return $this->response->fromJsonString($json);
 
     }
@@ -109,9 +108,8 @@ class UserController extends Controller
      */
     public function deleteArticleByIdAction(User $user)
     {
-        $this->em->remove($user);
-        $this->em->flush();
-
+        $this->service->delete($user);
+        
         return $this->response->setData('Object Delete');
 
     }
@@ -125,7 +123,7 @@ class UserController extends Controller
     public function editUserByIdAction(User $user, Request $request)
     {
         $data       = $request->getContent();
-        $editUser   = $this->serializer->deserialize($data, User::class, 'json');
+        $editUser   = $this->serializer->decode($data, User::class, 'json');
         $this->service->update($user, $editUser);
 
         return $this->response->setData('Object Update');

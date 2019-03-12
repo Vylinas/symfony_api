@@ -19,17 +19,42 @@ class ArticleService
     }
 
     /**
-     * @param Artcicle the Article to update
-     * @param User the Article with new proprety
+     * @param Article
      */
-    public function update(Article $article, Article $editArticle)
+    public function create(Article $article)
     {
-        if($editArticle->getEmail() !== $article->getEmail())
-        {
-            $article->setEmail($editArticle->getEmail());
-        }
-        
+        $article->setIsActive(true);
+        $article->setCreatedAt(new \DateTime("now"));
         $this->em->persist($article);
         $this->em->flush();
     }
+
+    /**
+     * @param Article
+     */
+    public function delete(Article $article)
+    {
+        $this->em->remove($article);
+        $this->em->flush();
+    }
+
+    /**
+     * @param Article the Article to update
+     * @param Article the Article with new proprety
+     */
+    public function update(Article $article, Article $editArticle)
+    {
+        if($editArticle->getName() !== $article->getName())
+        {
+            $article->setName($editArticle->getName());
+        }
+        if($editArticle->getDescription() !== $article->getDescription())
+        {
+            $article->setDescription($editArticle->getDescription());
+        }
+        $article->setUpdatedAt(new \DateTime());
+        $this->em->persist($article);
+        $this->em->flush();
+    }
+
 }

@@ -6,15 +6,12 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Doctrine\Common\Persistence\ObjectManager;
-use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\HttpFoundation\Request;
 
 use App\Repository\ArticleRepository;
-use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Article;
 use App\Service\ArticleService;
+use App\Service\OperateSerializer;
 
 /**
  * @Route("/api")
@@ -28,7 +25,7 @@ class ArticleController extends Controller
     private $repo;
 
     /**
-     * @var Serializer
+     * @var OperateSerializer
      */
     private $serializer;
 
@@ -50,15 +47,14 @@ class ArticleController extends Controller
     public function __construct(ArticleRepository $repo, 
                                 ObjectManager $em, 
                                 JsonResponse $response, 
-                                ArticleService $service)
+                                ArticleService $service,
+                                OperateSerializer $serializer)
     {
-        $encoders           = [new XmlEncoder(), new JsonEncoder()];
-        $normalizers        = [new ObjectNormalizer()];
-        $this->serializer   = new Serializer($normalizers, $encoders);
         $this->response     = $response;
         $this->repo         = $repo;
         $this->em           = $em;
         $this->service      = $service;
+        $this->serializer   = $serializer;
 
     }
 
@@ -70,7 +66,7 @@ class ArticleController extends Controller
     public function getArticleAction()
     {
         $articles       = $this->repo->findAll();
-        $jsonContent    = $this->serializer->serialize($articles, 'json');
+        $jsonContent    = $this->serializer->encode($articles, 'json');
         
         return $this->response->fromJsonString($jsonContent);
 
@@ -85,10 +81,8 @@ class ArticleController extends Controller
     public function postArticleAction(Request $request)
     {
         $data       = $request->getContent();
-        $article    = $this->serializer->deserialize($data, Article::class, 'json');
-
-        $this->em->persist($article);
-        $this->em->flush();
+        $article    = $this->serializer->decode($data, Article::class, 'json');
+        $this->service->create($article);
 
         return $this->response->setData('Object Create');
 
@@ -102,7 +96,7 @@ class ArticleController extends Controller
      */
     public function getArticleByIdAction(Article $article)
     {
-        $json = $this->serializer->serialize($article, 'json');
+        $json = $this->serializer->encode($article, 'json');
 
         return $this->response->fromJsonString($json);
 
@@ -116,23 +110,22 @@ class ArticleController extends Controller
      */
     public function deleteArticleByIdAction(Article $article)
     {
-        $this->em->remove($article);
-        $this->em->flush();
+        $this->service->delete($article);
 
         return $this->response->setData('Object Delete');
 
     }
 
     /**
-     * @Route("articles/{id}", methods={"PUT"} )
+     * @Route("/articles/{id}", methods={"PUT"} )
      * 
      * @param Article
      * @return JsonResponse
      */
     public function editArticleByIdAction(Article $article, Request $request) 
     {
-        $data = $request->getContent();
-        $editArticle  = $this->serializer->deserialize($data, User::class, 'json');
+        $data           = $request->getContent();
+        $editArticle    = $this->serializer->decode($data, Article::class, 'json');
         $this->service->update($article, $editArticle);
         
         return $this->response->setData('Object Update');
