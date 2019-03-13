@@ -36,7 +36,7 @@ class UserService
     public function create(User $user)
     {
         if (!$user->setPassword($this->hasher->encodePassword($user, $user->getPassword())) ||
-            !$user->setCreatedAt(new \DateTime()) ||
+            !$user->setCreatedAt(date('Y-m-d H:i:s')) ||
             !$user->setIsActive(true)
         ){ throw new Exception('Les value ne sont pas correct'); }
         $this->em->persist($user);
@@ -53,7 +53,7 @@ class UserService
         {
             $user->setEmail($editUser->getEmail());
         }
-        $user->setUpdatedAt(new \DateTime("now"));
+        $user->setUpdatedAt(date('Y-m-d H:i:s'));
         $this->em->persist($user);
         $this->em->flush();
     }

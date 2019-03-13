@@ -101,7 +101,7 @@ class UserController extends Controller
     }
 
     /**
-     * @Route("/articles/{id}", methods={"DELETE"} ) 
+     * @Route("/users/{id}", methods={"DELETE"} ) 
      * 
      * @param User
      * @return JsonResponse

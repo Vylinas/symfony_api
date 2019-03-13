@@ -24,7 +24,7 @@ class ArticleService
     public function create(Article $article)
     {
         $article->setIsActive(true);
-        $article->setCreatedAt(new \DateTime("now"));
+        $article->setCreatedAt(date('Y-m-d H:i:s'));
         $this->em->persist($article);
         $this->em->flush();
     }
@@ -52,7 +52,7 @@ class ArticleService
         {
             $article->setDescription($editArticle->getDescription());
         }
-        $article->setUpdatedAt(new \DateTime());
+        $article->setUpdatedAt(date('Y-m-d H:i:s'));
         $this->em->persist($article);
         $this->em->flush();
     }
